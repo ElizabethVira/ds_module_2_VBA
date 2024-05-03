@@ -1,0 +1,109 @@
+Sub stocks():
+
+    'Declare variables
+    Dim input_row As Long 'Row number on first table
+    Dim cell_vol As Double 'Content of column G (cell volume)
+    Dim vol_total As Double 'Sum the total of same ticker volume on column L
+    Dim ticker As String 'List of all the Tickers from row A in column I
+
+    Dim output_row As Long 'Row number on second table
+    
+    Dim ticker_close As Double 'Content of column F (cell close)
+    Dim ticker_open As Double 'Content of column C (cell open)
+    Dim price_change As Double 'To get the price change of last row of cell F - 2nd cell of row C
+    Dim percent_change As Double 'To get the percent change of price change
+    
+    Dim max_row As Integer 'To find the Greatest % Increase
+    Dim min_row As Integer 'To find the Greatest % Decrease
+    Dim Total_Volume As Integer 'To find the Greatest Total volume
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    
+    For Each ws In Worksheets
+        ws.Activate
+
+        lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        
+        MsgBox (lastRow)
+    
+        vol_total = 0
+        output_row = 2
+        
+        'Titles of Leaderboard Columns I to L
+        ws.Range("I1").Value = "Ticker"
+        ws.Range("J1").Value = "Quarterly Change"
+        ws.Range("K1").Value = "Percent Change"
+        ws.Range("L1").Value = "Total Stock Volume"
+        ws.Range("P1").Value = "Ticker"
+        ws.Range("Q1").Value = "Value"
+        ws.Range("O2").Value = "Greatest % Increase"
+        ws.Range("O3").Value = "Greatest % Decrease"
+        ws.Range("O4").Value = "Greatest Total Volume"
+        
+        
+        'Assign the location for open for first ticker
+        ticker_open = Cells(2, 3).Value
+    
+    For input_row = 2 To lastRow:
+        cell_vol = ws.Cells(input_row, 7).Value
+        vol_total = vol_total + cell_vol
+        ticker = ws.Cells(input_row, 1).Value
+    
+        If (ws.Cells(input_row + 1, 1).Value <> ticker) Then
+            ticker_close = ws.Cells(input_row, 6).Value
+            price_change = ticker_close - ticker_open
+                    
+            ' Check if open price is 0 first
+            If (ticker_open > 0) Then
+                percent_change = price_change / ticker_open
+                Else
+                percent_change = 0
+            End If
+            
+            'MsgBox (ticker)
+        
+            ws.Cells(output_row, 9).Value = ticker
+            ws.Cells(output_row, 10).Value = price_change
+            ws.Cells(output_row, 11).Value = percent_change
+            ws.Cells(output_row, 12).Value = vol_total
+                        
+            'Add the conditinal formatting with colors
+            If (price_change > 0) Then
+                ws.Cells(output_row, 10).Interior.ColorIndex = 4 'If more than 0 Green
+                ElseIf (price_change < 0) Then
+                ws.Cells(output_row, 10).Interior.ColorIndex = 3 'If lower than 0 Red
+                Else
+                ws.Cells(output_row, 10).Interior.ColorIndex = 2 'If 0 White
+            End If
+        
+            ' reset
+            vol_total = 0
+            output_row = output_row + 1
+            ticker_open = ws.Cells(input_row + 1, 3).Value 'To find next ticker open
+    
+        End If
+    Next input_row
+        
+        'Style the second leaderboard
+        Columns("K:K").NumberFormat = "0.00%"
+        Columns("I:L").AutoFit
+        
+            
+        'Find the Greates % Increase
+        ws.Range("Q2") = "%" & WorksheetFunction.Max(ws.Range("K2:K" & lastRow)) * 100
+
+        'Find the Greates % Decrease
+        ws.Range("Q3") = "%" & WorksheetFunction.Min(ws.Range("K2:K" & lastRow)) * 100
+
+        max_row = WorksheetFunction.Match(WorksheetFunction.Max(ws.Range("K2:K" & lastRow)), ws.Range("K2:K" & lastRow), 0)
+        ws.Range("P2") = ws.Cells(max_row + 1, 9)
+        ws.Range("Q4") = WorksheetFunction.Max(ws.Range("L2:L" & lastRow))
+
+        min_row = WorksheetFunction.Match(WorksheetFunction.Min(ws.Range("K2:K" & lastRow)), ws.Range("K2:K" & lastRow), 0)
+        ws.Range("P3") = ws.Cells(min_row + 1, 9)
+
+        Total_Volume = WorksheetFunction.Match(WorksheetFunction.Max(ws.Range("L2:L" & lastRow)), ws.Range("L2:L" & lastRow), 0)
+        ws.Range("P4") = ws.Cells(Total_Volume + 1, 9)
+        
+    Next ws
+End Sub
